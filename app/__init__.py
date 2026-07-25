@@ -14,7 +14,7 @@ def create_app(config_class=Config):
     db.init_app(app)
 
     # Ensure database & uploads directories exist
-    os.makedirs(os.path.join(Config.BASE_DIR, 'database'), exist_ok=True)
+    os.makedirs(Config.DATA_DIR, exist_ok=True)
     os.makedirs(os.path.join(app.config['UPLOAD_FOLDER'], 'absensi'), exist_ok=True)
 
     # Register Blueprints
