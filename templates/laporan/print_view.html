@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="id">
+
+<head>
+  <meta charset="UTF-8">
+  <title>Cetak Laporan Kehadiran Siswa - SMKN 1 Bangkinang</title>
+  <style>
+    body {
+      font-family: 'Calibri', 'Segoe UI', Arial, sans-serif;
+      color: #111827;
+      background: #ffffff;
+      margin: 0;
+      padding: 20px;
+      font-size: 12px;
+    }
+
+    .kop-surat {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 20px;
+      border-b: 3px double #111827;
+      padding-bottom: 12px;
+      margin-bottom: 20px;
+      text-align: center;
+    }
+
+    .kop-logo {
+      width: 70px;
+      height: 70px;
+      background: #2563eb;
+      color: white;
+      font-weight: 900;
+      font-size: 24px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 12px;
+    }
+
+    .kop-text h2 {
+      margin: 0;
+      font-size: 18px;
+      text-transform: uppercase;
+      font-weight: 800;
+    }
+
+    .kop-text h1 {
+      margin: 2px 0;
+      font-size: 22px;
+      text-transform: uppercase;
+      font-weight: 900;
+      color: #2563eb;
+    }
+
+    .kop-text p {
+      margin: 0;
+      font-size: 11px;
+      color: #4b5563;
+    }
+
+    .laporan-title {
+      text-align: center;
+      margin-bottom: 20px;
+    }
+
+    .laporan-title h3 {
+      margin: 0;
+      font-size: 14px;
+      text-transform: uppercase;
+    }
+
+    .laporan-title p {
+      margin: 2px 0 0 0;
+      font-size: 11px;
+      color: #6b7280;
+    }
+
+    table.data-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-bottom: 30px;
+    }
+
+    table.data-table th,
+    table.data-table td {
+      border: 1px solid #d1d5db;
+      padding: 8px 10px;
+      text-align: left;
+    }
+
+    table.data-table th {
+      background-color: #2563eb;
+      color: #ffffff;
+      font-size: 11px;
+      text-transform: uppercase;
+      text-align: center;
+    }
+
+    table.data-table tr:nth-child(even) {
+      background-color: #f9fafb;
+    }
+
+    .ttd-section {
+      display: flex;
+      justify-content: space-between;
+      margin-top: 40px;
+      page-break-inside: avoid;
+    }
+
+    .ttd-box {
+      text-align: center;
+      width: 220px;
+    }
+
+    .ttd-space {
+      height: 70px;
+    }
+
+    @media print {
+      body {
+        padding: 0;
+      }
+
+      .no-print {
+        display: none;
+      }
+    }
+  </style>
+</head>
+
+<body>
+
+  <div class="no-print" style="margin-bottom: 20px; text-align: right;">
+    <button onclick="window.print()"
+      style="padding: 8px 16px; background: #2563eb; color: white; border: none; border-radius: 8px; font-weight: bold; cursor: pointer;">
+      🖨️ Cetak / Print Ke PDF
+    </button>
+  </div>
+
+  <!-- Kop Surat Resmi -->
+  <div class="kop-surat">
+    <img src="{{ url_for('static', filename='img/logo_smkn1.png') }}" alt="Logo SMKN 1 Bangkinang" style="width: 75px; height: 75px; object-fit: contain;">
+    <div class="kop-text">
+      <h2>PEMERINTAH PROVINSI RIAU - DINAS PENDIDIKAN</h2>
+      <h1>SMK NEGERI 1 BANGKINANG</h1>
+      <p>Jl. Tuanku Tambusai No. 1, Bangkinang, Kabupaten Kampar, Riau | Website: smkn1bangkinang.sch.id</p>
+    </div>
+  </div>
+
+  <!-- Laporan Header -->
+  <div class="laporan-title">
+    <h3>REKAPITULASI ABSENSI SISWA DIGITAL GEOFENCING</h3>
+    <p>Periode Tanggal: {{ start_date }} s/d {{ end_date }}</p>
+  </div>
+
+  <!-- Data Table -->
+  <table class="data-table">
+    <thead>
+      <tr>
+        <th style="width: 30px;">No</th>
+        <th>Tanggal</th>
+        <th>Jam</th>
+        <th>NIS</th>
+        <th>Nama Siswa</th>
+        <th>Kelas</th>
+        <th>Mata Pelajaran</th>
+        <th>Status</th>
+        <th>Jarak</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% if absensi_list %}
+      {% for a in absensi_list %}
+      <tr>
+        <td style="text-align: center;">{{ loop.index }}</td>
+        <td style="text-align: center;">{{ a.tanggal }}</td>
+        <td style="text-align: center; font-weight: bold;">{{ a.jam_masuk }}</td>
+        <td style="text-align: center;">{{ a.siswa_rel.nis if a.siswa_rel else '-' }}</td>
+        <td style="font-weight: bold;">{{ a.siswa_rel.nama if a.siswa_rel else '-' }}</td>
+        <td style="text-align: center;">{{ a.siswa_rel.kelas_rel.nama_kelas if a.siswa_rel and a.siswa_rel.kelas_rel
+          else '-' }}</td>
+        <td>{{ a.jadwal_rel.mata_pelajaran if a.jadwal_rel else 'Umum' }}</td>
+        <td style="text-align: center; font-weight: bold;">{{ a.status }}</td>
+        <td style="text-align: center;">{{ a.jarak | round(1) if a.jarak else 0 }}m</td>
+      </tr>
+      {% endfor %}
+      {% else %}
+      <tr>
+        <td colspan="9" style="text-align: center; padding: 20px;">Tidak ada data absensi untuk periode ini.</td>
+      </tr>
+      {% endif %}
+    </tbody>
+  </table>
+
+  <!-- Tanda Tangan Block -->
+  <div class="ttd-section">
+    <div class="ttd-box">
+      <p>Mengetahui,<br>Wali Kelas X PPLG</p>
+      <div class="ttd-space"></div>
+      <p><strong>Ariefin Danu Putra, S.Kom.</strong><br>Wali Kelas X PPLG</p>
+    </div>
+
+    <div class="ttd-box">
+      <p>Bangkinang, {{ cetak_tanggal }}<br>Kepala Sekolah SMKN 1</p>
+      <div class="ttd-space"></div>
+      <p><strong>Dr. Eka Rahmawati, M.Pd</strong><br>NIP. 197911152005012003</p>
+    </div>
+  </div>
+
+</body>
+
+</html>

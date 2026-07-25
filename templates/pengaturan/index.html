@@ -1,0 +1,154 @@
+{% extends "base.html" %}
+
+{% block title %}Pengaturan Sistem Absensi{% endblock %}
+
+{% block content %}
+<div class="space-y-6 max-w-5xl mx-auto">
+
+  <!-- Header -->
+  <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+    <div>
+      <h1 class="text-2xl font-extrabold text-slate-800 dark:text-slate-100 flex items-center gap-2">
+        <i data-lucide="settings" class="w-6 h-6 text-blue-600"></i>
+        <span>Pengaturan System Enterprise</span>
+      </h1>
+      <p class="text-xs text-slate-400">Konfigurasi Geofencing, Jam Operasional, Profil Sekolah & Database Backup</p>
+    </div>
+
+    <a href="{{ url_for('pengaturan.backup_db_action') }}" class="px-4 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-semibold text-xs shadow-md shadow-indigo-600/20 flex items-center gap-1.5 transition">
+      <i data-lucide="database" class="w-4 h-4"></i>
+      <span>Backup Database (SQLite)</span>
+    </a>
+  </div>
+
+  <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+
+    <!-- 1. GEOFENCING CONFIG -->
+    <div class="card-premium p-6 space-y-4">
+      <div class="flex items-center gap-3 pb-3 border-b border-slate-100 dark:border-slate-800">
+        <div class="w-9 h-9 rounded-xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 flex items-center justify-center font-bold">
+          <i data-lucide="map-pin" class="w-5 h-5"></i>
+        </div>
+        <div>
+          <h2 class="font-extrabold text-sm text-slate-800 dark:text-slate-100">Koordinat & Radius Geofence</h2>
+          <p class="text-xs text-slate-400">Titik pusat lokasi SMKN 1 Bangkinang</p>
+        </div>
+      </div>
+
+      <form action="{{ url_for('pengaturan.update_geofence_action') }}" method="POST" class="space-y-4 text-xs">
+        <div>
+          <label class="font-bold text-slate-700 dark:text-slate-300">Latitude Pusat Sekolah</label>
+          <input type="text" name="latitude" value="{{ geofence.latitude }}" required class="w-full mt-1 p-2.5 bg-slate-100 dark:bg-slate-700 rounded-xl outline-none font-mono text-slate-800 dark:text-slate-100">
+        </div>
+
+        <div>
+          <label class="font-bold text-slate-700 dark:text-slate-300">Longitude Pusat Sekolah</label>
+          <input type="text" name="longitude" value="{{ geofence.longitude }}" required class="w-full mt-1 p-2.5 bg-slate-100 dark:bg-slate-700 rounded-xl outline-none font-mono text-slate-800 dark:text-slate-100">
+        </div>
+
+        <div>
+          <label class="font-bold text-slate-700 dark:text-slate-300">Radius Toleransi Absensi (Meter)</label>
+          <input type="number" name="radius" value="{{ geofence.radius }}" required class="w-full mt-1 p-2.5 bg-slate-100 dark:bg-slate-700 rounded-xl outline-none font-bold text-blue-600 dark:text-blue-400">
+          <p class="text-[10px] text-slate-400 mt-1">Siswa di luar radius ini tidak dapat menekan tombol Absen.</p>
+        </div>
+
+        <button type="submit" class="btn-primary text-xs w-full py-2.5 rounded-xl">
+          Simpan Geofence Settings
+        </button>
+      </form>
+    </div>
+
+    <!-- 2. JAM ABSENSI CONFIG -->
+    <div class="card-premium p-6 space-y-4">
+      <div class="flex items-center gap-3 pb-3 border-b border-slate-100 dark:border-slate-800">
+        <div class="w-9 h-9 rounded-xl bg-amber-500/10 text-amber-600 dark:text-amber-400 flex items-center justify-center font-bold">
+          <i data-lucide="clock" class="w-5 h-5"></i>
+        </div>
+        <div>
+          <h2 class="font-extrabold text-sm text-slate-800 dark:text-slate-100">Pengaturan Jam Absensi</h2>
+          <p class="text-xs text-slate-400">Batas jam untuk status Hadir & Terlambat</p>
+        </div>
+      </div>
+
+      <form action="{{ url_for('pengaturan.update_jam_action') }}" method="POST" class="space-y-4 text-xs">
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="font-bold text-slate-700 dark:text-slate-300">Buka Absensi (Mulai)</label>
+            <input type="text" name="jam_hadir_mulai" value="{{ jam_setting.jam_hadir_mulai }}" required class="w-full mt-1 p-2.5 bg-slate-100 dark:bg-slate-700 rounded-xl outline-none text-slate-800 dark:text-slate-100 font-mono">
+          </div>
+          <div>
+            <label class="font-bold text-slate-700 dark:text-slate-300">Batas Tepat Waktu</label>
+            <input type="text" name="jam_hadir_selesai" value="{{ jam_setting.jam_hadir_selesai }}" required class="w-full mt-1 p-2.5 bg-slate-100 dark:bg-slate-700 rounded-xl outline-none text-emerald-600 font-mono font-bold">
+          </div>
+        </div>
+
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="font-bold text-slate-700 dark:text-slate-300">Batas Terlambat</label>
+            <input type="text" name="jam_terlambat_selesai" value="{{ jam_setting.jam_terlambat_selesai }}" required class="w-full mt-1 p-2.5 bg-slate-100 dark:bg-slate-700 rounded-xl outline-none text-amber-600 font-mono font-bold">
+          </div>
+          <div>
+            <label class="font-bold text-slate-700 dark:text-slate-300">Tutup Sesi (Selesai)</label>
+            <input type="text" name="jam_tutup" value="{{ jam_setting.jam_tutup }}" required class="w-full mt-1 p-2.5 bg-slate-100 dark:bg-slate-700 rounded-xl outline-none text-slate-800 dark:text-slate-100 font-mono">
+          </div>
+        </div>
+
+        <p class="text-[10px] text-slate-400">Pukul 06:45 - 07:15 = 🟢 Hadir | 07:16 - 07:30 = 🟡 Terlambat | &gt; 07:30 = 🔴 Terlambat Berat.</p>
+
+        <button type="submit" class="btn-primary text-xs w-full py-2.5 rounded-xl">
+          Simpan Jam Settings
+        </button>
+      </form>
+    </div>
+
+  </div>
+
+  <!-- 3. PROFIL SEKOLAH CONFIG -->
+  <div class="card-premium p-6 space-y-4">
+    <div class="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-slate-800">
+      <div class="flex items-center gap-3">
+        <div class="w-9 h-9 rounded-xl bg-blue-500/10 text-blue-600 dark:text-blue-400 flex items-center justify-center font-bold">
+          <i data-lucide="building" class="w-5 h-5"></i>
+        </div>
+        <div>
+          <h2 class="font-extrabold text-sm text-slate-800 dark:text-slate-100">Profil Identitas Sekolah</h2>
+          <p class="text-xs text-slate-400">Identitas resmi untuk kop surat & header laporan</p>
+        </div>
+      </div>
+      <div class="flex items-center gap-2 p-1.5 rounded-xl bg-slate-100 dark:bg-slate-700/60 border border-slate-200 dark:border-slate-600">
+        <img src="{{ url_for('static', filename='img/logo_smkn1.png') }}" alt="Logo SMKN 1 Bangkinang" class="w-8 h-8 object-contain">
+        <span class="text-[11px] font-bold text-slate-700 dark:text-slate-300 pr-2">Logo Resmi</span>
+      </div>
+    </div>
+
+    <form action="{{ url_for('pengaturan.update_sekolah_action') }}" method="POST" class="space-y-4 text-xs">
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div>
+          <label class="font-bold text-slate-700 dark:text-slate-300">Nama Sekolah *</label>
+          <input type="text" name="nama_sekolah" value="{{ sekolah_setting.nama_sekolah }}" required class="w-full mt-1 p-2.5 bg-slate-100 dark:bg-slate-700 rounded-xl outline-none font-bold text-slate-800 dark:text-slate-100">
+        </div>
+
+        <div>
+          <label class="font-bold text-slate-700 dark:text-slate-300">Tahun Ajaran & Semester</label>
+          <div class="grid grid-cols-2 gap-2">
+            <input type="text" name="tahun_ajaran" value="{{ sekolah_setting.tahun_ajaran }}" required class="mt-1 p-2.5 bg-slate-100 dark:bg-slate-700 rounded-xl outline-none text-slate-800 dark:text-slate-100">
+            <input type="text" name="semester" value="{{ sekolah_setting.semester }}" required class="mt-1 p-2.5 bg-slate-100 dark:bg-slate-700 rounded-xl outline-none text-slate-800 dark:text-slate-100">
+          </div>
+        </div>
+      </div>
+
+      <div>
+        <label class="font-bold text-slate-700 dark:text-slate-300">Alamat Lengkap Sekolah *</label>
+        <textarea name="alamat_sekolah" rows="2" required class="w-full mt-1 p-2.5 bg-slate-100 dark:bg-slate-700 rounded-xl outline-none text-slate-800 dark:text-slate-100">{{ sekolah_setting.alamat_sekolah }}</textarea>
+      </div>
+
+      <div class="flex justify-end">
+        <button type="submit" class="btn-primary text-xs px-6 py-2.5 rounded-xl">
+          Simpan Profil Sekolah
+        </button>
+      </div>
+    </form>
+  </div>
+
+</div>
+{% endblock %}

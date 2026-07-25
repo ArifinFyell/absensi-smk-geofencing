@@ -1,0 +1,108 @@
+{% extends "base_guru.html" %}
+{% block title %}Rekap Absensi Siswa{% endblock %}
+
+{% block content %}
+<div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
+  <div>
+    <h1 class="text-2xl font-bold text-slate-800 dark:text-slate-100 flex items-center gap-2">
+      <div class="w-8 h-8 rounded-lg bg-indigo-100 text-indigo-600 dark:bg-indigo-900/50 dark:text-indigo-400 flex items-center justify-center">
+        <i data-lucide="file-text" class="w-5 h-5"></i>
+      </div>
+      Rekap Kehadiran
+    </h1>
+    <p class="text-sm text-slate-500 mt-1">Laporan rekapitulasi absensi siswa per bulan untuk kelas yang Anda ajar.</p>
+  </div>
+  <div class="flex gap-2">
+    <button onclick="window.print()" class="px-4 py-2 bg-indigo-50 hover:bg-indigo-100 text-indigo-600 dark:bg-indigo-900/30 dark:hover:bg-indigo-900/50 dark:text-indigo-400 font-bold rounded-xl text-sm transition flex items-center gap-2">
+      <i data-lucide="printer" class="w-4 h-4"></i> Cetak Laporan
+    </button>
+  </div>
+</div>
+
+<div class="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700/60 p-6 mb-8 print:hidden">
+  <form method="GET" action="{{ url_for('guru.rekap') }}" class="flex flex-col sm:flex-row gap-4 items-end">
+    <div class="w-full sm:w-1/4">
+      <label class="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2">Pilih Kelas</label>
+      <select name="kelas_id" class="w-full p-2.5 bg-slate-100 dark:bg-slate-700 border border-transparent focus:border-blue-500 rounded-xl outline-none transition text-slate-800 dark:text-slate-200" onchange="this.form.submit()">
+        {% if not kelas_list %}
+          <option disabled selected>Tidak ada kelas yang diajar</option>
+        {% endif %}
+        {% for k in kelas_list %}
+          <option value="{{ k.id }}" {% if k.id == kelas_id_sel %}selected{% endif %}>{{ k.nama_kelas }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    
+    <div class="w-full sm:w-1/4">
+      <label class="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2">Bulan</label>
+      <select name="bulan" class="w-full p-2.5 bg-slate-100 dark:bg-slate-700 border border-transparent focus:border-blue-500 rounded-xl outline-none transition text-slate-800 dark:text-slate-200" onchange="this.form.submit()">
+        {% for val, nama in bulan_list %}
+          <option value="{{ val }}" {% if val == bulan %}selected{% endif %}>{{ nama }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    
+    <div class="w-full sm:w-1/4">
+      <label class="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2">Tahun</label>
+      <input type="number" name="tahun" value="{{ tahun }}" class="w-full p-2.5 bg-slate-100 dark:bg-slate-700 border border-transparent focus:border-blue-500 rounded-xl outline-none transition text-slate-800 dark:text-slate-200" onchange="this.form.submit()">
+    </div>
+  </form>
+</div>
+
+{% if kelas_id_sel %}
+<div class="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700/60 overflow-x-auto print:shadow-none print:border-none">
+  <table class="w-full text-left border-collapse min-w-max">
+    <thead>
+      <tr class="bg-slate-50 dark:bg-slate-800/80 text-slate-600 dark:text-slate-400 text-[10px] font-bold uppercase tracking-wider">
+        <th class="p-3 border-b border-r border-slate-200 dark:border-slate-700/60 text-center w-10 sticky left-0 bg-slate-50 dark:bg-slate-800 z-10 shadow-[1px_0_0_0_#e2e8f0] dark:shadow-[1px_0_0_0_#334155]">No</th>
+        <th class="p-3 border-b border-r border-slate-200 dark:border-slate-700/60 sticky left-10 bg-slate-50 dark:bg-slate-800 z-10 w-48 shadow-[1px_0_0_0_#e2e8f0] dark:shadow-[1px_0_0_0_#334155]">Nama Siswa</th>
+        
+        <!-- Tanggal (Senin-Jumat only in hari_list) -->
+        {% for hd in hari_list %}
+          <th class="p-3 border-b border-slate-200 dark:border-slate-700/60 text-center text-xs min-w-[36px]" title="{{ hd.strftime('%d %b') }}">{{ hd.day }}</th>
+        {% endfor %}
+        
+        <th class="p-3 border-b border-l border-slate-200 dark:border-slate-700/60 text-center text-emerald-600 dark:text-emerald-400">H</th>
+        <th class="p-3 border-b border-slate-200 dark:border-slate-700/60 text-center text-blue-600 dark:text-blue-400">S</th>
+        <th class="p-3 border-b border-slate-200 dark:border-slate-700/60 text-center text-purple-600 dark:text-purple-400">I</th>
+        <th class="p-3 border-b border-slate-200 dark:border-slate-700/60 text-center text-rose-600 dark:text-rose-400">A</th>
+      </tr>
+    </thead>
+    <tbody class="divide-y divide-slate-100 dark:divide-slate-700/60 text-sm">
+      {% for row in rekap_data %}
+      <tr class="hover:bg-slate-50/50 dark:hover:bg-slate-750/30 transition">
+        <td class="p-3 border-r border-slate-200 dark:border-slate-700/60 text-center text-slate-500 font-medium sticky left-0 bg-white dark:bg-slate-800 shadow-[1px_0_0_0_#e2e8f0] dark:shadow-[1px_0_0_0_#334155]">{{ loop.index }}</td>
+        <td class="p-3 border-r border-slate-200 dark:border-slate-700/60 font-bold text-slate-700 dark:text-slate-200 sticky left-10 bg-white dark:bg-slate-800 shadow-[1px_0_0_0_#e2e8f0] dark:shadow-[1px_0_0_0_#334155] truncate max-w-[192px]" title="{{ row.siswa.nama }}">{{ row.siswa.nama }}</td>
+        
+        {% for hd in hari_list %}
+          {% set rec = row.hari.get(hd) %}
+          <td class="p-3 text-center text-xs font-bold border-r border-slate-100 dark:border-slate-700/30">
+            {% if rec %}
+              {% if rec.status == 'Hadir' %}
+                <span class="text-emerald-500 bg-emerald-50 dark:bg-emerald-900/30 px-1.5 py-0.5 rounded">H</span>
+              {% elif rec.status in ['Terlambat', 'Terlambat Berat'] %}
+                <span class="text-amber-500 bg-amber-50 dark:bg-amber-900/30 px-1.5 py-0.5 rounded">T</span>
+              {% elif rec.status == 'Sakit' %}
+                <span class="text-blue-500 bg-blue-50 dark:bg-blue-900/30 px-1.5 py-0.5 rounded">S</span>
+              {% elif rec.status == 'Izin' %}
+                <span class="text-purple-500 bg-purple-50 dark:bg-purple-900/30 px-1.5 py-0.5 rounded">I</span>
+              {% else %}
+                <span class="text-rose-500 bg-rose-50 dark:bg-rose-900/30 px-1.5 py-0.5 rounded">A</span>
+              {% endif %}
+            {% else %}
+              <span class="text-slate-300 dark:text-slate-600">-</span>
+            {% endif %}
+          </td>
+        {% endfor %}
+        
+        <td class="p-3 border-l border-slate-200 dark:border-slate-700/60 text-center font-black text-emerald-600 dark:text-emerald-400 bg-emerald-50/30 dark:bg-emerald-900/10">{{ row.hadir + row.terlambat }}</td>
+        <td class="p-3 text-center font-bold text-blue-600 dark:text-blue-400 bg-blue-50/30 dark:bg-blue-900/10">{{ row.sakit }}</td>
+        <td class="p-3 text-center font-bold text-purple-600 dark:text-purple-400 bg-purple-50/30 dark:bg-purple-900/10">{{ row.izin }}</td>
+        <td class="p-3 text-center font-bold text-rose-600 dark:text-rose-400 bg-rose-50/30 dark:bg-rose-900/10">{{ row.alfa }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endif %}
+{% endblock %}

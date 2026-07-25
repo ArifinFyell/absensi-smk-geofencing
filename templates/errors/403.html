@@ -1,0 +1,18 @@
+{% extends "public_base.html" %}
+
+{% block title %}403 Access Forbidden{% endblock %}
+
+{% block content %}
+<div class="min-h-screen bg-slate-950 flex flex-col items-center justify-center p-6 text-center space-y-6">
+  <div class="w-20 h-20 rounded-3xl bg-rose-500/20 text-rose-400 flex items-center justify-center border border-rose-500/30">
+    <i data-lucide="shield-alert" class="w-10 h-10"></i>
+  </div>
+  <div class="space-y-2">
+    <h1 class="text-4xl font-black text-white">403 - AKSED DITOLAK</h1>
+    <p class="text-sm text-slate-400 max-w-md">Anda tidak memiliki hak akses untuk membuka halaman ini. Silakan login menggunakan akun administrator.</p>
+  </div>
+  <a href="{{ url_for('dashboard.index') }}" class="btn-primary text-xs px-6 py-3 rounded-2xl">
+    Kembali ke Dashboard
+  </a>
+</div>
+{% endblock %}

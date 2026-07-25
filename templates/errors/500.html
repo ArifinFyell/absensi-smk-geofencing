@@ -1,0 +1,18 @@
+{% extends "public_base.html" %}
+
+{% block title %}500 Internal Server Error{% endblock %}
+
+{% block content %}
+<div class="min-h-screen bg-slate-950 flex flex-col items-center justify-center p-6 text-center space-y-6">
+  <div class="w-20 h-20 rounded-3xl bg-amber-500/20 text-amber-400 flex items-center justify-center border border-amber-500/30">
+    <i data-lucide="alert-triangle" class="w-10 h-10"></i>
+  </div>
+  <div class="space-y-2">
+    <h1 class="text-4xl font-black text-white">500 - KESALAHAN SERVER</h1>
+    <p class="text-sm text-slate-400 max-w-md">Terjadi kesalahan internal pada sistem. Tim pengembang telah mencatat insiden ini.</p>
+  </div>
+  <a href="{{ url_for('landing_page') }}" class="btn-primary text-xs px-6 py-3 rounded-2xl">
+    Kembali ke Beranda
+  </a>
+</div>
+{% endblock %}

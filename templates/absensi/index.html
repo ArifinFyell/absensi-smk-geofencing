@@ -1,0 +1,196 @@
+{% extends "public_base.html" %}
+
+{% block title %}Portal Absensi Siswa - SMKN 1 Bangkinang{% endblock %}
+
+{% block content %}
+<div class="min-h-screen bg-slate-950 flex flex-col justify-between p-4 sm:p-6"
+     x-data="GeofenceApp({{ geofence.latitude if geofence else 0.334612 }}, {{ geofence.longitude if geofence else 101.026415 }}, {{ geofence.radius if geofence else 100 }})">
+
+  <!-- Header Branding -->
+  <header class="max-w-md mx-auto w-full flex items-center justify-between py-2 border-b border-slate-800 text-xs">
+    <div class="flex items-center gap-2.5">
+      <img src="{{ url_for('static', filename='img/logo_smkn1.png') }}" alt="Logo SMKN 1 Bangkinang" class="w-9 h-9 object-contain">
+      <div>
+        <div class="font-bold text-slate-100 text-xs">SMKN 1 BANGKINANG</div>
+        <div class="text-[10px] text-blue-400">Absensi Digital Geofence</div>
+      </div>
+    </div>
+
+    <div class="text-right font-mono text-slate-400 text-[11px]">
+      <div id="realtime-clock" class="font-bold text-blue-400">--:--:--</div>
+      <div id="realtime-date" class="text-[10px] text-slate-500">-- ---- ----</div>
+    </div>
+  </header>
+
+  <!-- Main Card Centered -->
+  <main class="max-w-md mx-auto w-full my-6 space-y-5">
+
+    <!-- SUCCESS ANIMATION CARD (Triggered when isSuccess is true) -->
+    <div x-show="isSuccess" x-cloak x-transition
+         class="p-8 rounded-3xl bg-slate-900 border border-emerald-500/50 shadow-2xl text-center space-y-5">
+      <div class="w-20 h-20 rounded-full bg-emerald-500/20 text-emerald-400 mx-auto flex items-center justify-center border border-emerald-500/40 shadow-xl shadow-emerald-500/20">
+        <i data-lucide="check" class="w-10 h-10 stroke-[3]"></i>
+      </div>
+
+      <div class="space-y-1">
+        <h2 class="text-2xl font-black text-white">ABSENSI BERHASIL!</h2>
+        <p class="text-xs text-slate-400">Bukti kehadiran Anda telah tersimpan di database server SMKN 1 Bangkinang.</p>
+      </div>
+
+      <template x-if="successData">
+        <div class="p-4 rounded-2xl bg-slate-800/80 border border-slate-700/60 text-xs text-left space-y-2">
+          <div class="flex justify-between"><span class="text-slate-400">Nama:</span> <strong x-text="successData.nama" class="text-white"></strong></div>
+          <div class="flex justify-between"><span class="text-slate-400">Jam Masuk:</span> <strong x-text="successData.jam_masuk" class="text-emerald-400 font-mono"></strong></div>
+          <div class="flex justify-between"><span class="text-slate-400">Status Waktu:</span> <strong x-text="successData.status" class="text-amber-400"></strong></div>
+          <div class="flex justify-between"><span class="text-slate-400">Jarak ke Sekolah:</span> <strong x-text="successData.jarak + ' m'" class="text-blue-400"></strong></div>
+        </div>
+      </template>
+
+      <button @click="window.location.reload()" class="w-full py-3.5 rounded-2xl bg-blue-600 hover:bg-blue-500 text-white font-bold text-sm shadow-lg shadow-blue-600/30 transition">
+        Selesai / Kembali
+      </button>
+    </div>
+
+    <!-- FORM CARD -->
+    <div x-show="!isSuccess" class="p-6 rounded-3xl bg-slate-900 border border-slate-800 shadow-2xl space-y-5 backdrop-blur-xl">
+
+      <!-- GPS & Location Status Indicator -->
+      <div class="p-4 rounded-2xl border transition-all duration-300 space-y-2
+                  :class="isWithinRadius ? 'bg-emerald-950/40 border-emerald-800 text-emerald-300' : 'bg-rose-950/40 border-rose-800 text-rose-300'">
+        
+        <div class="flex items-center justify-between text-xs font-bold">
+          <div class="flex items-center gap-2">
+            <i data-lucide="map-pin" class="w-4 h-4 flex-shrink-0"></i>
+            <span x-text="gpsStatusText"></span>
+          </div>
+          <button @click="requestLocation()" class="text-[10px] text-blue-400 underline hover:text-blue-300">Refresh GPS</button>
+        </div>
+
+        <template x-if="gpsErrorMsg">
+          <p class="text-[11px] text-rose-400 pt-1 border-t border-rose-900/40" x-text="gpsErrorMsg"></p>
+        </template>
+      </div>
+
+      <!-- Active Schedule Real-Time Card -->
+      <div class="rounded-2xl border transition-all duration-500 space-y-2 overflow-hidden"
+           :class="kelas_id ? (hasJadwal ? 'p-4 bg-blue-950/50 border-blue-700/50' : 'p-4 bg-slate-800/80 border-slate-700/60') : 'p-4 bg-slate-800/80 border-slate-700/60'">
+
+        <div class="flex items-center justify-between text-[11px] text-slate-400">
+          <span class="flex items-center gap-1.5">
+            <span x-show="isScheduleLoading" class="w-3 h-3 border border-blue-400 border-t-transparent rounded-full animate-spin inline-block"></span>
+            Jadwal Pelajaran Saat Ini
+          </span>
+          <span class="font-bold text-blue-400 uppercase font-mono">{{ hari_ini }} • {{ jam_sekarang }}</span>
+        </div>
+
+        <div x-show="!kelas_id" class="text-sm text-slate-400 italic">
+          ← Pilih kelas terlebih dahulu untuk mendeteksi jadwal otomatis
+        </div>
+
+        <div x-show="kelas_id && !isScheduleLoading">
+          <div class="font-extrabold text-base text-white transition-all" x-text="activeJadwalMapel"></div>
+          <div class="text-xs text-slate-300 flex items-center justify-between mt-1">
+            <span>Pengajar: <span x-text="activeJadwalGuru"></span></span>
+            <span class="px-2 py-0.5 rounded text-[10px] font-bold transition-all"
+                  :class="hasJadwal ? 'bg-blue-900/60 text-blue-300' : 'bg-slate-700 text-slate-400'"
+                  x-text="activeJadwalKelas"></span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Attendance Form -->
+      <form @submit.prevent="submitAttendance()" class="space-y-4 text-xs">
+
+        <div>
+          <label class="block font-bold text-slate-300 mb-1">Nama Lengkap Siswa *</label>
+          <input type="text" x-model="nama" required placeholder="Ketik nama lengkap Anda..."
+                 class="w-full p-3 bg-slate-800 border border-slate-700 focus:border-blue-500 rounded-xl outline-none text-slate-100 text-sm placeholder:text-slate-500 transition">
+        </div>
+
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block font-bold text-slate-300 mb-1">Kelas *</label>
+            <select x-model="kelas_id" @change="fetchJadwalByKelas()" required
+                    class="w-full p-3 bg-slate-800 border border-slate-700 focus:border-blue-500 rounded-xl outline-none text-slate-100 transition">
+              <option value="">-- Pilih Kelas --</option>
+              {% for k in kelas_list %}
+                <option value="{{ k.id }}">{{ k.nama_kelas }}</option>
+              {% endfor %}
+            </select>
+          </div>
+
+          <div>
+            <label class="block font-bold text-slate-300 mb-1">Jurusan *</label>
+            <select x-model="jurusan_id" required class="w-full p-3 bg-slate-800 border border-slate-700 focus:border-blue-500 rounded-xl outline-none text-slate-100 transition">
+              <option value="">-- Pilih Jurusan --</option>
+              {% for j in jurusan_list %}
+                <option value="{{ j.id }}">{{ j.kode }}</option>
+              {% endfor %}
+            </select>
+          </div>
+        </div>
+
+        <!-- Camera / Photo Upload Box -->
+        <div class="space-y-2">
+          <label class="block font-bold text-slate-300">Upload / Ambil Foto Bukti *</label>
+          
+          <div class="p-4 rounded-2xl bg-slate-800/60 border border-dashed border-slate-700 text-center space-y-3 relative overflow-hidden">
+            
+            <template x-if="!photoDataUrl && !isCameraOpen">
+              <div class="space-y-2">
+                <i data-lucide="camera" class="w-8 h-8 mx-auto text-blue-400"></i>
+                <div class="text-xs text-slate-400">Ambil foto swafoto langsung atau pilih berkas</div>
+                <div class="flex items-center justify-center gap-2 pt-1">
+                  <button type="button" @click="openCamera()" class="px-3 py-2 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs">
+                    Kamera HP
+                  </button>
+                  <label class="px-3 py-2 rounded-xl bg-slate-700 hover:bg-slate-600 text-slate-200 font-bold text-xs cursor-pointer">
+                    Pilih File
+                    <input type="file" accept="image/*" @change="handleFileSelect($event)" class="hidden">
+                  </label>
+                </div>
+              </div>
+            </template>
+
+            <!-- Video Stream when Camera is Active -->
+            <div x-show="isCameraOpen" class="space-y-2">
+              <video id="camera-video" class="w-full h-48 bg-black rounded-xl object-cover" autoplay playsinline></video>
+              <button type="button" @click="capturePhoto()" class="px-4 py-2 rounded-xl bg-emerald-600 text-white font-bold text-xs shadow-lg">
+                📸 Tangkap Foto
+              </button>
+            </div>
+
+            <!-- Photo Preview -->
+            <template x-if="photoDataUrl">
+              <div class="space-y-2">
+                <img :src="photoDataUrl" class="w-full h-48 object-cover rounded-xl border border-slate-700">
+                <button type="button" @click="photoDataUrl = null; photoFile = null" class="text-xs text-rose-400 underline">Ganti Foto</button>
+              </div>
+            </template>
+
+          </div>
+        </div>
+
+        <!-- LARGE SUBMIT BUTTON -->
+        <button type="submit" 
+                :disabled="!isWithinRadius || isSubmitting"
+                class="w-full py-4 rounded-2xl bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-500 hover:to-blue-600 disabled:opacity-50 disabled:cursor-not-allowed text-white font-black text-base shadow-xl shadow-blue-600/30 flex items-center justify-center gap-2 transition-all hover:scale-[1.01] active:scale-[0.99] uppercase tracking-wider">
+          <span x-show="!isSubmitting">KIRIM ABSENSI SEKARANG</span>
+          <span x-show="isSubmitting" class="flex items-center gap-2">
+            <span class="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></span>
+            <span>Memproses Validasi...</span>
+          </span>
+        </button>
+
+      </form>
+
+    </div>
+
+  </main>
+
+  <footer class="text-center text-slate-500 text-[11px]">
+    &copy; 2026 SMK Negeri 1 Bangkinang. Geofencing Attendance System.
+  </footer>
+
+</div>
+{% endblock %}

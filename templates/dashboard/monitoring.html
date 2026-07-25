@@ -1,0 +1,95 @@
+{% extends "base.html" %}
+
+{% block title %}Realtime Control Room Monitoring{% endblock %}
+
+{% block content %}
+<div class="space-y-6">
+
+  <!-- Header -->
+  <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+    <div>
+      <h1 class="text-2xl font-extrabold text-slate-800 dark:text-slate-100 flex items-center gap-2">
+        <i data-lucide="activity" class="w-6 h-6 text-emerald-500"></i>
+        <span>Control Room Monitoring Absensi</span>
+      </h1>
+      <p class="text-xs text-slate-400">Monitoring kehadiran siswa per kelas secara detail real-time</p>
+    </div>
+
+    <div class="flex items-center gap-2 text-xs font-semibold">
+      <span class="px-3 py-1.5 rounded-xl bg-emerald-500/10 text-emerald-600 border border-emerald-500/20">🟢 Hadir Tepat</span>
+      <span class="px-3 py-1.5 rounded-xl bg-amber-500/10 text-amber-600 border border-amber-500/20">🟡 Terlambat</span>
+      <span class="px-3 py-1.5 rounded-xl bg-rose-500/10 text-rose-600 border border-rose-500/20">🔴 Belum Absen</span>
+    </div>
+  </div>
+
+  <!-- Class Control Rooms -->
+  {% for c_detail in kelas_detail %}
+  <div class="card-premium p-6 space-y-4">
+    
+    <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between pb-4 border-b border-slate-100 dark:border-slate-800 gap-2">
+      <div>
+        <h2 class="text-lg font-extrabold text-slate-800 dark:text-slate-100">{{ c_detail.kelas.nama_kelas }}</h2>
+        <p class="text-xs text-slate-400">Wali Kelas: {{ c_detail.kelas.wali_kelas }}</p>
+      </div>
+
+      <div class="flex items-center gap-4 text-xs font-bold">
+        <div class="px-3 py-1 rounded-xl bg-slate-100 dark:bg-slate-700/60 text-slate-700 dark:text-slate-200">
+          Total: {{ c_detail.total }} Siswa
+        </div>
+        <div class="px-3 py-1 rounded-xl bg-emerald-500/10 text-emerald-600 border border-emerald-500/20">
+          Hadir: {{ c_detail.hadir }}
+        </div>
+        <div class="px-3 py-1 rounded-xl bg-amber-500/10 text-amber-600 border border-amber-500/20">
+          Terlambat: {{ c_detail.terlambat }}
+        </div>
+        <div class="px-3 py-1 rounded-xl bg-rose-500/10 text-rose-600 border border-rose-500/20">
+          Belum: {{ c_detail.belum_hadir }}
+        </div>
+      </div>
+    </div>
+
+    <!-- Student Cards Grid -->
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
+      {% for item in c_detail.siswa_items %}
+      <div class="p-3.5 rounded-2xl border transition-all duration-200 flex items-center justify-between
+                  {{ 'bg-emerald-500/5 border-emerald-500/30' if item.absensi and item.absensi.status == 'Hadir' else '' }}
+                  {{ 'bg-amber-500/5 border-amber-500/30' if item.absensi and item.absensi.status in ['Terlambat', 'Terlambat Berat'] else '' }}
+                  {{ 'bg-slate-50 dark:bg-slate-800/40 border-slate-200/80 dark:border-slate-700/60 opacity-80' if not item.absensi else '' }}">
+        
+        <div class="flex items-center gap-3 min-w-0">
+          <div class="w-10 h-10 rounded-2xl font-bold flex items-center justify-center text-xs flex-shrink-0
+                      {{ 'bg-emerald-500 text-white shadow-md shadow-emerald-500/20' if item.absensi and item.absensi.status == 'Hadir' else '' }}
+                      {{ 'bg-amber-500 text-white shadow-md shadow-amber-500/20' if item.absensi and item.absensi.status in ['Terlambat', 'Terlambat Berat'] else '' }}
+                      {{ 'bg-slate-200 dark:bg-slate-700 text-slate-500 dark:text-slate-400' if not item.absensi else '' }}">
+            {{ item.siswa.nama[:2].upper() }}
+          </div>
+
+          <div class="min-w-0">
+            <div class="font-bold text-xs truncate text-slate-800 dark:text-slate-100">{{ item.siswa.nama }}</div>
+            <div class="text-[10px] text-slate-400 font-mono">NIS: {{ item.siswa.nis }}</div>
+            {% if item.absensi %}
+              <div class="text-[10px] font-semibold mt-0.5
+                          {{ 'text-emerald-600 dark:text-emerald-400' if item.absensi.status == 'Hadir' else 'text-amber-600 dark:text-amber-400' }}">
+                {{ item.absensi.jam_masuk }} • {{ item.absensi.status }}
+              </div>
+            {% else %}
+              <div class="text-[10px] text-rose-500 font-medium mt-0.5">Belum Absen</div>
+            {% endif %}
+          </div>
+        </div>
+
+        {% if item.absensi %}
+        <a href="{{ url_for('dashboard.detail_absensi_view', absensi_id=item.absensi.id) }}" class="p-1.5 rounded-xl bg-white dark:bg-slate-700 text-blue-600 dark:text-blue-400 hover:scale-105 transition shadow-sm border border-slate-200 dark:border-slate-600" title="Detail Verification">
+          <i data-lucide="eye" class="w-4 h-4"></i>
+        </a>
+        {% endif %}
+
+      </div>
+      {% endfor %}
+    </div>
+
+  </div>
+  {% endfor %}
+
+</div>
+{% endblock %}

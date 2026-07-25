@@ -1,0 +1,257 @@
+{% extends "base.html" %}
+
+{% block title %}Master Data Siswa{% endblock %}
+
+{% block content %}
+<div class="space-y-6" x-data="{ modalTambah: false, modalEdit: false, editSiswa: {} }">
+
+  <!-- TOP BAR -->
+  <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+    <div>
+      <h1 class="text-2xl font-extrabold text-slate-800 dark:text-slate-100 flex items-center gap-2">
+        <i data-lucide="users" class="w-6 h-6 text-blue-600"></i>
+        <span>Master Data Siswa</span>
+      </h1>
+      <p class="text-xs text-slate-400">Kelola 34+ data siswa SMKN 1 Bangkinang</p>
+    </div>
+
+    <div class="flex flex-wrap items-center gap-2">
+      <button @click="modalTambah = true" class="btn-primary text-xs px-4 py-2.5 rounded-xl">
+        <i data-lucide="user-plus" class="w-4 h-4"></i>
+        <span>Tambah Siswa</span>
+      </button>
+      
+      <a href="{{ url_for('siswa.export_excel') }}" class="px-4 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-semibold text-xs shadow-md shadow-emerald-600/20 flex items-center gap-1.5 transition">
+        <i data-lucide="download" class="w-4 h-4"></i>
+        <span>Export Excel</span>
+      </a>
+    </div>
+  </div>
+
+  <!-- SEARCH & FILTER ROW -->
+  <div class="card-premium p-4 flex flex-col md:flex-row items-center justify-between gap-4">
+    
+    <form action="{{ url_for('siswa.index_view') }}" method="GET" class="w-full flex flex-col sm:flex-row items-center gap-3">
+      <!-- Instant Search -->
+      <div class="relative w-full sm:w-72">
+        <i data-lucide="search" class="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"></i>
+        <input type="text" name="q" value="{{ search_query }}" placeholder="Cari nama / NIS siswa..."
+               class="w-full pl-9 pr-4 py-2 text-xs bg-slate-100 dark:bg-slate-700/60 border border-transparent focus:border-blue-500 rounded-xl outline-none transition text-slate-800 dark:text-slate-100">
+      </div>
+
+      <!-- Filter Kelas -->
+      <select name="kelas_id" onchange="this.form.submit()" class="w-full sm:w-44 px-3 py-2 text-xs bg-slate-100 dark:bg-slate-700/60 border border-transparent rounded-xl outline-none text-slate-800 dark:text-slate-100">
+        <option value="">-- Semua Kelas --</option>
+        {% for k in kelas_list %}
+          <option value="{{ k.id }}" {{ 'selected' if selected_kelas == k.id|string }}>{{ k.nama_kelas }}</option>
+        {% endfor %}
+      </select>
+
+      <!-- Filter Jurusan -->
+      <select name="jurusan_id" onchange="this.form.submit()" class="w-full sm:w-44 px-3 py-2 text-xs bg-slate-100 dark:bg-slate-700/60 border border-transparent rounded-xl outline-none text-slate-800 dark:text-slate-100">
+        <option value="">-- Semua Jurusan --</option>
+        {% for j in jurusan_list %}
+          <option value="{{ j.id }}" {{ 'selected' if selected_jurusan == j.id|string }}>{{ j.kode }}</option>
+        {% endfor %}
+      </select>
+
+      {% if search_query or selected_kelas or selected_jurusan %}
+        <a href="{{ url_for('siswa.index_view') }}" class="text-xs text-rose-500 hover:underline">Reset Filter</a>
+      {% endif %}
+    </form>
+
+    <div class="text-xs text-slate-400 whitespace-nowrap">
+      Showing <strong>1-{{ siswa_list|length }}</strong> of <strong>{{ siswa_list|length }}</strong> Students
+    </div>
+
+  </div>
+
+  <!-- MODERN DATA TABLE -->
+  <div class="card-premium overflow-hidden">
+    <div class="overflow-x-auto">
+      <table class="w-full text-left text-xs text-slate-600 dark:text-slate-300">
+        <thead class="bg-slate-100/80 dark:bg-slate-700/50 text-slate-700 dark:text-slate-200 uppercase font-bold text-[11px] tracking-wider border-b border-slate-200 dark:border-slate-700">
+          <tr>
+            <th class="py-3.5 px-4 text-center">No</th>
+            <th class="py-3.5 px-4">NIS</th>
+            <th class="py-3.5 px-4">Nama Lengkap</th>
+            <th class="py-3.5 px-4">Kelas</th>
+            <th class="py-3.5 px-4">Jurusan</th>
+            <th class="py-3.5 px-4">Jenis Kelamin</th>
+            <th class="py-3.5 px-4">Status</th>
+            <th class="py-3.5 px-4 text-center">Aksi</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-slate-100 dark:divide-slate-700/50">
+          {% if siswa_list %}
+            {% for s in siswa_list %}
+            <tr class="hover:bg-slate-50/80 dark:hover:bg-slate-700/40 transition">
+              <td class="py-3.5 px-4 text-center font-semibold text-slate-400">{{ loop.index }}</td>
+              <td class="py-3.5 px-4 font-mono font-bold text-blue-600 dark:text-blue-400">{{ s.nis }}</td>
+              <td class="py-3.5 px-4 font-bold text-slate-800 dark:text-slate-100">
+                <a href="{{ url_for('siswa.detail_view', siswa_id=s.id) }}" class="hover:text-blue-600 hover:underline">
+                  {{ s.nama }}
+                </a>
+              </td>
+              <td class="py-3.5 px-4">
+                <span class="px-2.5 py-1 rounded-lg bg-blue-50 dark:bg-blue-900/60 text-blue-700 dark:text-blue-300 font-semibold">
+                  {{ s.kelas_rel.nama_kelas if s.kelas_rel else '-' }}
+                </span>
+              </td>
+              <td class="py-3.5 px-4 font-semibold text-slate-700 dark:text-slate-300">{{ s.jurusan_rel.kode if s.jurusan_rel else '-' }}</td>
+              <td class="py-3.5 px-4">{{ s.jenis_kelamin }}</td>
+              <td class="py-3.5 px-4">
+                <span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-500/10 text-emerald-600 border border-emerald-500/20">
+                  {{ s.status }}
+                </span>
+              </td>
+              <td class="py-3.5 px-4 text-center">
+                <div class="flex items-center justify-center gap-2">
+                  <a href="{{ url_for('siswa.detail_view', siswa_id=s.id) }}" class="p-1.5 rounded-lg bg-slate-100 dark:bg-slate-700 text-blue-600 dark:text-blue-400 hover:bg-blue-50 transition" title="Lihat Profil">
+                    <i data-lucide="eye" class="w-4 h-4"></i>
+                  </a>
+                  
+                  <button @click="editSiswa = { id: {{ s.id }}, nis: '{{ s.nis }}', nama: '{{ s.nama }}', kelas_id: '{{ s.kelas_id }}', jurusan_id: '{{ s.jurusan_id }}', jenis_kelamin: '{{ s.jenis_kelamin }}', no_hp: '{{ s.no_hp or '' }}' }; modalEdit = true" 
+                          class="p-1.5 rounded-lg bg-amber-50 dark:bg-amber-950/60 text-amber-600 dark:text-amber-400 hover:bg-amber-100 transition" title="Edit Data">
+                    <i data-lucide="edit-3" class="w-4 h-4"></i>
+                  </button>
+
+                  <form action="{{ url_for('siswa.delete_action', siswa_id=s.id) }}" method="POST" onsubmit="return confirm('Apakah Anda yakin ingin menghapus data siswa {{ s.nama }}?')" class="inline">
+                    <button type="submit" class="p-1.5 rounded-lg bg-rose-50 dark:bg-rose-950/60 text-rose-600 dark:text-rose-400 hover:bg-rose-100 transition" title="Hapus Data">
+                      <i data-lucide="trash-2" class="w-4 h-4"></i>
+                    </button>
+                  </form>
+                </div>
+              </td>
+            </tr>
+            {% endfor %}
+          {% else %}
+            <tr>
+              <td colspan="8" class="py-12 text-center text-slate-400">
+                <i data-lucide="users" class="w-12 h-12 mx-auto mb-2 opacity-40"></i>
+                <div>Belum ada Data Siswa ditemukan.</div>
+              </td>
+            </tr>
+          {% endif %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- MODAL TAMBAH SISWA -->
+  <div x-show="modalTambah" x-cloak class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/60 backdrop-blur-sm">
+    <div @click.away="modalTambah = false" class="w-full max-w-lg card-premium p-6 space-y-4">
+      <div class="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-slate-700">
+        <h3 class="font-extrabold text-base text-slate-800 dark:text-slate-100">Tambah Siswa Baru</h3>
+        <button @click="modalTambah = false" class="text-slate-400 hover:text-slate-600">✕</button>
+      </div>
+
+      <form action="{{ url_for('siswa.add_action') }}" method="POST" class="space-y-4 text-xs">
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="font-bold text-slate-700 dark:text-slate-300">NIS Siswa *</label>
+            <input type="text" name="nis" required placeholder="Contoh: 240035" class="w-full mt-1 p-2.5 bg-slate-100 dark:bg-slate-700 rounded-xl outline-none text-slate-800 dark:text-slate-100">
+          </div>
+          <div>
+            <label class="font-bold text-slate-700 dark:text-slate-300">Jenis Kelamin</label>
+            <select name="jenis_kelamin" class="w-full mt-1 p-2.5 bg-slate-100 dark:bg-slate-700 rounded-xl outline-none text-slate-800 dark:text-slate-100">
+              <option value="Laki-Laki">Laki-Laki</option>
+              <option value="Perempuan">Perempuan</option>
+            </select>
+          </div>
+        </div>
+
+        <div>
+          <label class="font-bold text-slate-700 dark:text-slate-300">Nama Lengkap Siswa *</label>
+          <input type="text" name="nama" required placeholder="Nama lengkap siswa" class="w-full mt-1 p-2.5 bg-slate-100 dark:bg-slate-700 rounded-xl outline-none text-slate-800 dark:text-slate-100">
+        </div>
+
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="font-bold text-slate-700 dark:text-slate-300">Kelas *</label>
+            <select name="kelas_id" required class="w-full mt-1 p-2.5 bg-slate-100 dark:bg-slate-700 rounded-xl outline-none text-slate-800 dark:text-slate-100">
+              {% for k in kelas_list %}
+                <option value="{{ k.id }}">{{ k.nama_kelas }}</option>
+              {% endfor %}
+            </select>
+          </div>
+          <div>
+            <label class="font-bold text-slate-700 dark:text-slate-300">Jurusan *</label>
+            <select name="jurusan_id" required class="w-full mt-1 p-2.5 bg-slate-100 dark:bg-slate-700 rounded-xl outline-none text-slate-800 dark:text-slate-100">
+              {% for j in jurusan_list %}
+                <option value="{{ j.id }}">{{ j.kode }} - {{ j.nama_jurusan }}</option>
+              {% endfor %}
+            </select>
+          </div>
+        </div>
+
+        <div>
+          <label class="font-bold text-slate-700 dark:text-slate-300">No HP Siswa / Orangtua</label>
+          <input type="text" name="no_hp" placeholder="08xxxxxxxxxx" class="w-full mt-1 p-2.5 bg-slate-100 dark:bg-slate-700 rounded-xl outline-none text-slate-800 dark:text-slate-100">
+        </div>
+
+        <div class="flex justify-end gap-2 pt-3 border-t border-slate-100 dark:border-slate-700">
+          <button type="button" @click="modalTambah = false" class="px-4 py-2 rounded-xl bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-300">Batal</button>
+          <button type="submit" class="btn-primary text-xs px-4 py-2 rounded-xl">Simpan Data Siswa</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- MODAL EDIT SISWA -->
+  <div x-show="modalEdit" x-cloak class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/60 backdrop-blur-sm">
+    <div @click.away="modalEdit = false" class="w-full max-w-lg card-premium p-6 space-y-4">
+      <div class="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-slate-700">
+        <h3 class="font-extrabold text-base text-slate-800 dark:text-slate-100">Edit Data Siswa</h3>
+        <button @click="modalEdit = false" class="text-slate-400 hover:text-slate-600">✕</button>
+      </div>
+
+      <form :action="'/siswa/edit/' + editSiswa.id" method="POST" class="space-y-4 text-xs">
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="font-bold text-slate-700 dark:text-slate-300">NIS Siswa</label>
+            <input type="text" name="nis" x-model="editSiswa.nis" required class="w-full mt-1 p-2.5 bg-slate-100 dark:bg-slate-700 rounded-xl outline-none text-slate-800 dark:text-slate-100">
+          </div>
+          <div>
+            <label class="font-bold text-slate-700 dark:text-slate-300">Jenis Kelamin</label>
+            <select name="jenis_kelamin" x-model="editSiswa.jenis_kelamin" class="w-full mt-1 p-2.5 bg-slate-100 dark:bg-slate-700 rounded-xl outline-none text-slate-800 dark:text-slate-100">
+              <option value="Laki-Laki">Laki-Laki</option>
+              <option value="Perempuan">Perempuan</option>
+            </select>
+          </div>
+        </div>
+
+        <div>
+          <label class="font-bold text-slate-700 dark:text-slate-300">Nama Lengkap</label>
+          <input type="text" name="nama" x-model="editSiswa.nama" required class="w-full mt-1 p-2.5 bg-slate-100 dark:bg-slate-700 rounded-xl outline-none text-slate-800 dark:text-slate-100">
+        </div>
+
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="font-bold text-slate-700 dark:text-slate-300">Kelas</label>
+            <select name="kelas_id" x-model="editSiswa.kelas_id" required class="w-full mt-1 p-2.5 bg-slate-100 dark:bg-slate-700 rounded-xl outline-none text-slate-800 dark:text-slate-100">
+              {% for k in kelas_list %}
+                <option value="{{ k.id }}">{{ k.nama_kelas }}</option>
+              {% endfor %}
+            </select>
+          </div>
+          <div>
+            <label class="font-bold text-slate-700 dark:text-slate-300">Jurusan</label>
+            <select name="jurusan_id" x-model="editSiswa.jurusan_id" required class="w-full mt-1 p-2.5 bg-slate-100 dark:bg-slate-700 rounded-xl outline-none text-slate-800 dark:text-slate-100">
+              {% for j in jurusan_list %}
+                <option value="{{ j.id }}">{{ j.kode }} - {{ j.nama_jurusan }}</option>
+              {% endfor %}
+            </select>
+          </div>
+        </div>
+
+        <div class="flex justify-end gap-2 pt-3 border-t border-slate-100 dark:border-slate-700">
+          <button type="button" @click="modalEdit = false" class="px-4 py-2 rounded-xl bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-300">Batal</button>
+          <button type="submit" class="btn-primary text-xs px-4 py-2 rounded-xl">Simpan Perubahan</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+</div>
+{% endblock %}

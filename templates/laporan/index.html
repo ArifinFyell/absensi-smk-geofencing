@@ -1,0 +1,135 @@
+{% extends "base.html" %}
+
+{% block title %}Laporan Rekapitulasi Kehadiran{% endblock %}
+
+{% block content %}
+<div class="space-y-6">
+
+  <!-- Header -->
+  <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+    <div>
+      <h1 class="text-2xl font-extrabold text-slate-800 dark:text-slate-100 flex items-center gap-2">
+        <i data-lucide="file-text" class="w-6 h-6 text-blue-600"></i>
+        <span>Laporan Rekapitulasi Absensi</span>
+      </h1>
+      <p class="text-xs text-slate-400">Filter dan unduh rekapitulasi kehadiran siswa SMKN 1 Bangkinang</p>
+    </div>
+
+    <div class="flex items-center gap-2">
+      <a href="{{ url_for('laporan.export_excel_laporan', start_date=start_date, end_date=end_date, status=selected_status) }}" 
+         class="px-4 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-semibold text-xs shadow-md shadow-emerald-600/20 flex items-center gap-1.5 transition">
+        <i data-lucide="file-spreadsheet" class="w-4 h-4"></i>
+        <span>Export Excel</span>
+      </a>
+
+      <a href="{{ url_for('laporan.print_pdf_laporan', start_date=start_date, end_date=end_date, status=selected_status) }}" target="_blank"
+         class="px-4 py-2.5 rounded-xl bg-rose-600 hover:bg-rose-700 text-white font-semibold text-xs shadow-md shadow-rose-600/20 flex items-center gap-1.5 transition">
+        <i data-lucide="printer" class="w-4 h-4"></i>
+        <span>Cetak / Cetak PDF</span>
+      </a>
+    </div>
+  </div>
+
+  <!-- FILTER CARD -->
+  <div class="card-premium p-6 space-y-4">
+    <div class="font-extrabold text-sm text-slate-800 dark:text-slate-100 flex items-center gap-2">
+      <i data-lucide="filter" class="w-4 h-4 text-blue-500"></i>
+      <span>Filter Laporan Kehadiran</span>
+    </div>
+
+    <form action="{{ url_for('laporan.index_view') }}" method="GET" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-5 gap-3 text-xs">
+      
+      <div>
+        <label class="font-bold text-slate-700 dark:text-slate-300">Dari Tanggal</label>
+        <input type="date" name="start_date" value="{{ start_date }}" class="w-full mt-1 p-2.5 bg-slate-100 dark:bg-slate-700/60 rounded-xl outline-none text-slate-800 dark:text-slate-100">
+      </div>
+
+      <div>
+        <label class="font-bold text-slate-700 dark:text-slate-300">Sampai Tanggal</label>
+        <input type="date" name="end_date" value="{{ end_date }}" class="w-full mt-1 p-2.5 bg-slate-100 dark:bg-slate-700/60 rounded-xl outline-none text-slate-800 dark:text-slate-100">
+      </div>
+
+      <div>
+        <label class="font-bold text-slate-700 dark:text-slate-300">Filter Kelas</label>
+        <select name="kelas_id" class="w-full mt-1 p-2.5 bg-slate-100 dark:bg-slate-700/60 rounded-xl outline-none text-slate-800 dark:text-slate-100">
+          <option value="">Semua Kelas</option>
+          {% for k in kelas_list %}
+            <option value="{{ k.id }}" {{ 'selected' if selected_kelas == k.id|string }}>{{ k.nama_kelas }}</option>
+          {% endfor %}
+        </select>
+      </div>
+
+      <div>
+        <label class="font-bold text-slate-700 dark:text-slate-300">Filter Status</label>
+        <select name="status" class="w-full mt-1 p-2.5 bg-slate-100 dark:bg-slate-700/60 rounded-xl outline-none text-slate-800 dark:text-slate-100">
+          <option value="">Semua Status</option>
+          <option value="Hadir" {{ 'selected' if selected_status == 'Hadir' }}>🟢 Hadir</option>
+          <option value="Terlambat" {{ 'selected' if selected_status == 'Terlambat' }}>🟡 Terlambat</option>
+          <option value="Terlambat Berat" {{ 'selected' if selected_status == 'Terlambat Berat' }}>🔴 Terlambat Berat</option>
+        </select>
+      </div>
+
+      <div class="flex items-end gap-2">
+        <button type="submit" class="w-full py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs shadow-md">
+          Filter
+        </button>
+        <a href="{{ url_for('laporan.index_view') }}" class="px-3 py-2.5 rounded-xl bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-300">Reset</a>
+      </div>
+
+    </form>
+  </div>
+
+  <!-- TABLE PREVIEW -->
+  <div class="card-premium overflow-hidden">
+    <div class="p-4 border-b border-slate-100 dark:border-slate-700/60 flex items-center justify-between text-xs font-bold">
+      <span>Hasil Filter: {{ absensi_list|length }} Data Absensi</span>
+      <span class="text-slate-400">Periode: {{ start_date }} s/d {{ end_date }}</span>
+    </div>
+
+    <div class="overflow-x-auto">
+      <table class="w-full text-left text-xs text-slate-600 dark:text-slate-300">
+        <thead class="bg-slate-100/80 dark:bg-slate-700/50 text-slate-700 dark:text-slate-200 uppercase font-bold text-[11px] tracking-wider border-b border-slate-200 dark:border-slate-700">
+          <tr>
+            <th class="py-3.5 px-4 text-center">No</th>
+            <th class="py-3.5 px-4">Tanggal</th>
+            <th class="py-3.5 px-4">Jam</th>
+            <th class="py-3.5 px-4">NIS</th>
+            <th class="py-3.5 px-4">Nama Siswa</th>
+            <th class="py-3.5 px-4">Kelas</th>
+            <th class="py-3.5 px-4">Mata Pelajaran</th>
+            <th class="py-3.5 px-4">Status</th>
+            <th class="py-3.5 px-4">Jarak</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-slate-100 dark:divide-slate-700/50">
+          {% if absensi_list %}
+            {% for a in absensi_list %}
+            <tr class="hover:bg-slate-50/80 dark:hover:bg-slate-700/40 transition">
+              <td class="py-3.5 px-4 text-center text-slate-400 font-semibold">{{ loop.index }}</td>
+              <td class="py-3.5 px-4">{{ a.tanggal }}</td>
+              <td class="py-3.5 px-4 font-mono font-bold text-blue-600 dark:text-blue-400">{{ a.jam_masuk }}</td>
+              <td class="py-3.5 px-4 font-mono">{{ a.siswa_rel.nis if a.siswa_rel else '-' }}</td>
+              <td class="py-3.5 px-4 font-bold text-slate-800 dark:text-slate-100">{{ a.siswa_rel.nama if a.siswa_rel else '-' }}</td>
+              <td class="py-3.5 px-4 font-semibold">{{ a.siswa_rel.kelas_rel.nama_kelas if a.siswa_rel and a.siswa_rel.kelas_rel else '-' }}</td>
+              <td class="py-3.5 px-4">{{ a.jadwal_rel.mata_pelajaran if a.jadwal_rel else 'Umum' }}</td>
+              <td class="py-3.5 px-4">
+                <span class="px-2 py-0.5 rounded-full text-[10px] font-bold
+                             {{ 'bg-emerald-500/10 text-emerald-600 border border-emerald-500/20' if a.status == 'Hadir' else 'bg-amber-500/10 text-amber-600 border border-amber-500/20' }}">
+                  {{ a.status }}
+                </span>
+              </td>
+              <td class="py-3.5 px-4 font-bold text-emerald-600 dark:text-emerald-400">{{ a.jarak | round(1) if a.jarak else 0 }}m</td>
+            </tr>
+            {% endfor %}
+          {% else %}
+            <tr>
+              <td colspan="9" class="py-12 text-center text-slate-400">Tidak ada data absensi untuk filter ini.</td>
+            </tr>
+          {% endif %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+</div>
+{% endblock %}

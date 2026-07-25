@@ -1,0 +1,166 @@
+{% extends "base_guru.html" %}
+{% block title %}Input Absensi Manual{% endblock %}
+
+{% block content %}
+<div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
+  <div>
+    <h1 class="text-2xl font-bold text-slate-800 dark:text-slate-100 flex items-center gap-2">
+      <div class="w-8 h-8 rounded-lg bg-emerald-100 text-emerald-600 dark:bg-emerald-900/50 dark:text-emerald-400 flex items-center justify-center">
+        <i data-lucide="clipboard-edit" class="w-5 h-5"></i>
+      </div>
+      Input Absensi Siswa
+    </h1>
+    <p class="text-sm text-slate-500 mt-1">Lakukan absensi manual atau perbarui status kehadiran siswa pada kelas yang Anda ajar.</p>
+  </div>
+</div>
+
+<div class="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700/60 p-6 mb-8">
+  <form method="GET" action="{{ url_for('guru.absensi') }}" class="flex flex-col sm:flex-row gap-4 items-end">
+    <div class="w-full sm:w-1/3">
+      <label class="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2">Pilih Kelas</label>
+      <select name="kelas_id" class="w-full p-2.5 bg-slate-100 dark:bg-slate-700 border border-transparent focus:border-blue-500 rounded-xl outline-none transition text-slate-800 dark:text-slate-200" onchange="this.form.submit()">
+        {% if not kelas_list %}
+          <option disabled selected>Tidak ada kelas yang diajar</option>
+        {% endif %}
+        {% for k in kelas_list %}
+          <option value="{{ k.id }}" {% if k.id == kelas_id_sel %}selected{% endif %}>{{ k.nama_kelas }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div class="pb-2 text-sm text-slate-500 dark:text-slate-400 flex-1">
+      Menampilkan data siswa untuk hari <strong class="text-slate-800 dark:text-slate-200">{{ hari_ini }}</strong>, {{ today.strftime('%d %B %Y') }}.
+    </div>
+  </form>
+</div>
+
+{% if kelas_id_sel %}
+<div class="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700/60 overflow-hidden">
+  <div class="overflow-x-auto">
+    <table class="w-full text-left border-collapse">
+      <thead>
+        <tr class="bg-slate-50 dark:bg-slate-800/80 border-b border-slate-200 dark:border-slate-700/60 text-slate-500 dark:text-slate-400 text-xs uppercase tracking-wider font-bold">
+          <th class="p-4 w-12 text-center">No</th>
+          <th class="p-4">Siswa</th>
+          <th class="p-4 w-32">Status Kehadiran</th>
+          <th class="p-4">Waktu & Keterangan</th>
+          <th class="p-4 w-28 text-center">Aksi</th>
+        </tr>
+      </thead>
+      <tbody class="divide-y divide-slate-100 dark:divide-slate-700/60">
+        {% for s in siswa_list %}
+        {% set rec = absensi_map.get(s.id) %}
+        <tr class="hover:bg-slate-50/50 dark:hover:bg-slate-750/30 transition">
+          <td class="p-4 text-center text-slate-500 font-medium">{{ loop.index }}</td>
+          <td class="p-4">
+            <div class="font-bold text-slate-800 dark:text-slate-100">{{ s.nama }}</div>
+            <div class="text-xs text-slate-500 dark:text-slate-400 mt-0.5">NIS: {{ s.nis }}</div>
+          </td>
+          <td class="p-4">
+            {% if rec %}
+              {% if rec.status == 'Hadir' %}
+                <span class="inline-flex px-2 py-1 bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-400 rounded-lg text-xs font-bold">Hadir</span>
+              {% elif rec.status in ['Terlambat', 'Terlambat Berat'] %}
+                <span class="inline-flex px-2 py-1 bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-400 rounded-lg text-xs font-bold">{{ rec.status }}</span>
+              {% elif rec.status == 'Sakit' %}
+                <span class="inline-flex px-2 py-1 bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-400 rounded-lg text-xs font-bold">Sakit</span>
+              {% elif rec.status == 'Izin' %}
+                <span class="inline-flex px-2 py-1 bg-purple-100 text-purple-700 dark:bg-purple-900/40 dark:text-purple-400 rounded-lg text-xs font-bold">Izin</span>
+              {% else %}
+                <span class="inline-flex px-2 py-1 bg-rose-100 text-rose-700 dark:bg-rose-900/40 dark:text-rose-400 rounded-lg text-xs font-bold">{{ rec.status }}</span>
+              {% endif %}
+            {% else %}
+              <span class="inline-flex px-2 py-1 bg-slate-100 text-slate-500 dark:bg-slate-700 dark:text-slate-300 rounded-lg text-xs font-bold">Belum Absen</span>
+            {% endif %}
+          </td>
+          <td class="p-4">
+            {% if rec %}
+              <div class="text-sm text-slate-700 dark:text-slate-200"><i data-lucide="clock" class="w-3.5 h-3.5 inline mr-1"></i> {{ rec.jam_masuk }}</div>
+              {% if rec.keterangan %}
+              <div class="text-xs text-slate-500 dark:text-slate-400 mt-1 flex gap-1">
+                <i data-lucide="info" class="w-3.5 h-3.5 text-blue-400"></i> {{ rec.keterangan }}
+              </div>
+              {% endif %}
+            {% else %}
+              -
+            {% endif %}
+          </td>
+          <td class="p-4 text-center">
+            <button type="button" @click="$dispatch('open-modal', { id: {{ s.id }}, nama: '{{ s.nama }}', status: '{{ rec.status if rec else '' }}', ket: '{{ rec.keterangan if rec else '' }}' })" class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 dark:bg-slate-700 dark:hover:bg-slate-600 dark:text-slate-200 rounded-xl text-xs font-bold transition">
+              <i data-lucide="edit-3" class="w-3.5 h-3.5"></i> Set Status
+            </button>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endif %}
+
+<!-- Input Manual Modal Component -->
+<div x-data="{ open: false, siswa_id: null, nama_siswa: '', status: '', keterangan: '' }"
+     @open-modal.window="open = true; siswa_id = $event.detail.id; nama_siswa = $event.detail.nama; status = $event.detail.status; keterangan = $event.detail.ket;"
+     x-show="open" 
+     class="fixed inset-0 z-50 overflow-y-auto" 
+     style="display: none;"
+     x-transition:enter="transition ease-out duration-300"
+     x-transition:enter-start="opacity-0"
+     x-transition:enter-end="opacity-100"
+     x-transition:leave="transition ease-in duration-200"
+     x-transition:leave-start="opacity-100"
+     x-transition:leave-end="opacity-0">
+     
+  <div class="flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
+    <div class="fixed inset-0 transition-opacity" aria-hidden="true" @click="open = false">
+      <div class="absolute inset-0 bg-slate-900/60 backdrop-blur-sm"></div>
+    </div>
+    
+    <span class="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
+    
+    <div class="inline-block align-bottom bg-white dark:bg-slate-800 rounded-3xl text-left overflow-hidden shadow-2xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg w-full border border-slate-100 dark:border-slate-700"
+         x-show="open"
+         x-transition:enter="transition ease-out duration-300 transform"
+         x-transition:enter-start="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"
+         x-transition:enter-end="opacity-100 translate-y-0 sm:scale-100"
+         x-transition:leave="transition ease-in duration-200 transform"
+         x-transition:leave-start="opacity-100 translate-y-0 sm:scale-100"
+         x-transition:leave-end="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95">
+         
+      <form action="{{ url_for('guru.simpan_absensi') }}" method="POST">
+        <input type="hidden" name="siswa_id" x-model="siswa_id">
+        <input type="hidden" name="kelas_id" value="{{ kelas_id_sel }}">
+        
+        <div class="px-6 py-5 border-b border-slate-100 dark:border-slate-700/60 flex items-center justify-between">
+          <h3 class="text-lg font-bold text-slate-800 dark:text-slate-100" x-text="'Set Absensi: ' + nama_siswa"></h3>
+          <button type="button" @click="open = false" class="text-slate-400 hover:text-rose-500 transition">
+            <i data-lucide="x" class="w-5 h-5"></i>
+          </button>
+        </div>
+        
+        <div class="px-6 py-5 space-y-5">
+          <div>
+            <label class="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2">Status Kehadiran</label>
+            <select name="status" x-model="status" required class="w-full p-2.5 bg-slate-50 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 focus:border-blue-500 rounded-xl outline-none transition text-slate-800 dark:text-slate-200">
+              <option value="" disabled>Pilih Status</option>
+              <option value="Hadir">Hadir</option>
+              <option value="Sakit">Sakit</option>
+              <option value="Izin">Izin</option>
+              <option value="Terlambat">Terlambat</option>
+              <option value="Alfa">Alfa</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2">Keterangan (Opsional)</label>
+            <textarea name="keterangan" x-model="keterangan" rows="3" class="w-full p-3 bg-slate-50 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 focus:border-blue-500 rounded-xl outline-none transition text-slate-800 dark:text-slate-200" placeholder="Tambahkan catatan jika perlu..."></textarea>
+          </div>
+        </div>
+        
+        <div class="px-6 py-4 bg-slate-50 dark:bg-slate-700/30 flex justify-end gap-3 rounded-b-3xl">
+          <button type="button" @click="open = false" class="px-5 py-2.5 rounded-xl font-bold text-slate-600 hover:bg-slate-200 dark:text-slate-300 dark:hover:bg-slate-600 transition">Batal</button>
+          <button type="submit" class="px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl shadow-lg shadow-blue-500/30 transition">Simpan Perubahan</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+{% endblock %}

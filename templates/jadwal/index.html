@@ -1,0 +1,149 @@
+{% extends "base.html" %}
+
+{% block title %}Jadwal Pelajaran Sekolah{% endblock %}
+
+{% block content %}
+<div class="space-y-6" x-data="{ modalTambah: false }">
+
+  <!-- Header -->
+  <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+    <div>
+      <h1 class="text-2xl font-extrabold text-slate-800 dark:text-slate-100 flex items-center gap-2">
+        <i data-lucide="calendar" class="w-6 h-6 text-blue-600"></i>
+        <span>Master Jadwal Pelajaran</span>
+      </h1>
+      <p class="text-xs text-slate-400">Jadwal pelajaran otomatis terintegrasi dengan portal absensi siswa</p>
+    </div>
+
+    <button @click="modalTambah = true" class="btn-primary text-xs px-4 py-2.5 rounded-xl">
+      <i data-lucide="plus-circle" class="w-4 h-4"></i>
+      <span>Tambah Jadwal</span>
+    </button>
+  </div>
+
+  <!-- HARI TABS -->
+  <div class="flex items-center gap-2 border-b border-slate-200 dark:border-slate-700 overflow-x-auto pb-1">
+    {% for h in hari_order %}
+      <a href="{{ url_for('jadwal.index_view', hari=h) }}" 
+         class="px-5 py-2.5 rounded-t-2xl font-bold text-xs transition border-t border-x whitespace-nowrap
+                {{ 'bg-white dark:bg-slate-800 text-blue-600 dark:text-blue-400 border-slate-200 dark:border-slate-700 border-b-transparent shadow-sm' if selected_hari == h else 'text-slate-500 hover:text-slate-800 dark:hover:text-slate-200 border-transparent' }}">
+        {{ h }}
+      </a>
+    {% endfor %}
+  </div>
+
+  <!-- SCHEDULE ITEMS FOR SELECTED DAY -->
+  <div class="space-y-4">
+    <div class="flex items-center justify-between text-xs font-bold text-slate-400 uppercase tracking-wider">
+      <span>Jadwal Pelajaran Hari {{ selected_hari }}</span>
+      <span>{{ jadwal_by_hari[selected_hari]|length }} Sesi Selesai</span>
+    </div>
+
+    {% if jadwal_by_hari[selected_hari] %}
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        {% for j in jadwal_by_hari[selected_hari] %}
+        <div class="card-premium p-5 space-y-3 relative group">
+          
+          <div class="flex items-center justify-between">
+            <span class="px-3 py-1 rounded-full bg-blue-500/10 text-blue-600 dark:text-blue-400 font-mono font-bold text-xs border border-blue-500/20">
+              {{ j.jam_mulai }} - {{ j.jam_selesai }} WIB
+            </span>
+
+            <span class="px-2.5 py-0.5 rounded-md bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-300 text-[10px] font-bold">
+              {{ j.kelas_rel.nama_kelas if j.kelas_rel else '-' }}
+            </span>
+          </div>
+
+          <div class="space-y-1">
+            <h3 class="text-base font-extrabold text-slate-800 dark:text-slate-100 group-hover:text-blue-600 transition">
+              {{ j.mata_pelajaran }}
+            </h3>
+            <p class="text-xs text-slate-500 dark:text-slate-400 flex items-center gap-1.5">
+              <i data-lucide="user-check" class="w-3.5 h-3.5 text-blue-500"></i>
+              <span>{{ j.guru_rel.nama if j.guru_rel else '-' }}</span>
+            </p>
+          </div>
+
+          <div class="pt-3 border-t border-slate-100 dark:border-slate-800 flex justify-end">
+            <form action="{{ url_for('jadwal.delete_action', jadwal_id=j.id) }}" method="POST" onsubmit="return confirm('Hapus jadwal ini?')" class="inline">
+              <button type="submit" class="text-xs text-rose-500 hover:text-rose-700 font-medium inline-flex items-center gap-1">
+                <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
+                <span>Hapus</span>
+              </button>
+            </form>
+          </div>
+
+        </div>
+        {% endfor %}
+      </div>
+    {% else %}
+      <div class="card-premium p-12 text-center text-slate-400 space-y-2">
+        <i data-lucide="calendar" class="w-12 h-12 mx-auto text-slate-300 dark:text-slate-600"></i>
+        <div class="text-sm font-semibold">Tidak ada jadwal pelajaran di hari {{ selected_hari }}.</div>
+      </div>
+    {% endif %}
+  </div>
+
+  <!-- MODAL TAMBAH JADWAL -->
+  <div x-show="modalTambah" x-cloak class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/60 backdrop-blur-sm">
+    <div @click.away="modalTambah = false" class="w-full max-w-lg card-premium p-6 space-y-4">
+      <div class="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-slate-700">
+        <h3 class="font-extrabold text-base text-slate-800 dark:text-slate-100">Tambah Jadwal Pelajaran</h3>
+        <button @click="modalTambah = false" class="text-slate-400 hover:text-slate-600">✕</button>
+      </div>
+
+      <form action="{{ url_for('jadwal.add_action') }}" method="POST" class="space-y-4 text-xs">
+        <div class="grid grid-cols-3 gap-3">
+          <div>
+            <label class="font-bold text-slate-700 dark:text-slate-300">Hari *</label>
+            <select name="hari" required class="w-full mt-1 p-2.5 bg-slate-100 dark:bg-slate-700 rounded-xl outline-none text-slate-800 dark:text-slate-100">
+              {% for h in hari_order %}
+                <option value="{{ h }}" {{ 'selected' if selected_hari == h }}>{{ h }}</option>
+              {% endfor %}
+            </select>
+          </div>
+          <div>
+            <label class="font-bold text-slate-700 dark:text-slate-300">Jam Mulai *</label>
+            <input type="text" name="jam_mulai" required placeholder="07:20" class="w-full mt-1 p-2.5 bg-slate-100 dark:bg-slate-700 rounded-xl outline-none text-slate-800 dark:text-slate-100">
+          </div>
+          <div>
+            <label class="font-bold text-slate-700 dark:text-slate-300">Jam Selesai *</label>
+            <input type="text" name="jam_selesai" required placeholder="08:40" class="w-full mt-1 p-2.5 bg-slate-100 dark:bg-slate-700 rounded-xl outline-none text-slate-800 dark:text-slate-100">
+          </div>
+        </div>
+
+        <div>
+          <label class="font-bold text-slate-700 dark:text-slate-300">Mata Pelajaran *</label>
+          <input type="text" name="mata_pelajaran" required placeholder="Contoh: Pemrograman Web" class="w-full mt-1 p-2.5 bg-slate-100 dark:bg-slate-700 rounded-xl outline-none text-slate-800 dark:text-slate-100">
+        </div>
+
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="font-bold text-slate-700 dark:text-slate-300">Guru Pengampu</label>
+            <select name="guru_id" class="w-full mt-1 p-2.5 bg-slate-100 dark:bg-slate-700 rounded-xl outline-none text-slate-800 dark:text-slate-100">
+              <option value="">- (Tidak Ada / Istirahat)</option>
+              {% for g in guru_list %}
+                <option value="{{ g.id }}">{{ g.nama }}</option>
+              {% endfor %}
+            </select>
+          </div>
+          <div>
+            <label class="font-bold text-slate-700 dark:text-slate-300">Kelas Target *</label>
+            <select name="kelas_id" required class="w-full mt-1 p-2.5 bg-slate-100 dark:bg-slate-700 rounded-xl outline-none text-slate-800 dark:text-slate-100">
+              {% for k in kelas_list %}
+                <option value="{{ k.id }}">{{ k.nama_kelas }}</option>
+              {% endfor %}
+            </select>
+          </div>
+        </div>
+
+        <div class="flex justify-end gap-2 pt-3 border-t border-slate-100 dark:border-slate-700">
+          <button type="button" @click="modalTambah = false" class="px-4 py-2 rounded-xl bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-300">Batal</button>
+          <button type="submit" class="btn-primary text-xs px-4 py-2 rounded-xl">Simpan Jadwal</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+</div>
+{% endblock %}

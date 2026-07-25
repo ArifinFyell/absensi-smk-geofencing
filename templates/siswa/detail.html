@@ -1,0 +1,103 @@
+{% extends "base.html" %}
+
+{% block title %}Profil Siswa - {{ siswa.nama }}{% endblock %}
+
+{% block content %}
+<div class="max-w-4xl mx-auto space-y-6">
+
+  <!-- Back button -->
+  <div>
+    <a href="{{ url_for('siswa.index_view') }}" class="inline-flex items-center gap-2 text-xs font-semibold text-slate-500 hover:text-slate-800 dark:hover:text-slate-200 transition">
+      <i data-lucide="arrow-left" class="w-4 h-4"></i>
+      <span>Kembali ke Master Data Siswa</span>
+    </a>
+  </div>
+
+  <!-- Profile Main Card -->
+  <div class="card-premium p-6 space-y-6">
+    
+    <div class="flex flex-col sm:flex-row items-center gap-6 pb-6 border-b border-slate-100 dark:border-slate-800">
+      <div class="w-20 h-20 rounded-3xl bg-gradient-to-br from-blue-500 to-indigo-600 text-white font-black text-2xl flex items-center justify-center shadow-lg shadow-blue-500/20">
+        {{ siswa.nama[:2].upper() }}
+      </div>
+
+      <div class="space-y-1 text-center sm:text-left flex-1">
+        <div class="flex flex-wrap items-center justify-center sm:justify-start gap-2">
+          <h1 class="text-2xl font-black text-slate-800 dark:text-slate-100">{{ siswa.nama }}</h1>
+          <span class="px-2.5 py-0.5 rounded-full text-xs font-bold bg-emerald-500/10 text-emerald-600 border border-emerald-500/20">
+            {{ siswa.status }}
+          </span>
+        </div>
+        <div class="text-xs text-slate-400 font-mono">NIS: {{ siswa.nis }} • {{ siswa.jenis_kelamin }}</div>
+        <div class="text-xs text-slate-500 flex flex-wrap justify-center sm:justify-start gap-3 pt-1">
+          <span>Kelas: <strong>{{ siswa.kelas_rel.nama_kelas if siswa.kelas_rel else '-' }}</strong></span>
+          <span>Jurusan: <strong>{{ siswa.jurusan_rel.nama_jurusan if siswa.jurusan_rel else '-' }}</strong></span>
+        </div>
+      </div>
+
+      <div class="text-center p-4 rounded-2xl bg-blue-50 dark:bg-blue-950/60 border border-blue-100 dark:border-blue-800 min-w-[140px]">
+        <div class="text-xs font-semibold text-slate-500 dark:text-slate-400">Tingkat Kehadiran</div>
+        <div class="text-2xl font-extrabold text-blue-600 dark:text-blue-400">{{ persentase }}%</div>
+        <div class="text-[10px] text-slate-400">Dari {{ total_absen }} sesi</div>
+      </div>
+    </div>
+
+    <!-- Attendance Counters -->
+    <div class="grid grid-cols-2 sm:grid-cols-4 gap-4 text-center text-xs">
+      <div class="p-3 rounded-2xl bg-emerald-500/10 border border-emerald-500/20">
+        <div class="text-lg font-bold text-emerald-600 dark:text-emerald-400">{{ hadir_count }}</div>
+        <div class="text-slate-500">Hadir Tepat</div>
+      </div>
+      <div class="p-3 rounded-2xl bg-amber-500/10 border border-amber-500/20">
+        <div class="text-lg font-bold text-amber-600 dark:text-amber-400">{{ terlambat_count }}</div>
+        <div class="text-slate-500">Terlambat</div>
+      </div>
+      <div class="p-3 rounded-2xl bg-blue-500/10 border border-blue-500/20">
+        <div class="text-lg font-bold text-blue-600 dark:text-blue-400">{{ izin_count }}</div>
+        <div class="text-slate-500">Izin</div>
+      </div>
+      <div class="p-3 rounded-2xl bg-purple-500/10 border border-purple-500/20">
+        <div class="text-lg font-bold text-purple-600 dark:text-purple-400">{{ sakit_count }}</div>
+        <div class="text-slate-500">Sakit</div>
+      </div>
+    </div>
+
+    <!-- History Timeline -->
+    <div class="space-y-4 pt-2">
+      <h2 class="font-extrabold text-base text-slate-800 dark:text-slate-100">Riwayat Kehadiran Siswa</h2>
+
+      {% if absensi_history %}
+      <div class="space-y-3">
+        {% for a in absensi_history %}
+        <div class="p-4 rounded-2xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200/80 dark:border-slate-700/60 flex items-center justify-between text-xs">
+          <div class="space-y-1">
+            <div class="font-bold text-slate-800 dark:text-slate-100">
+              {{ a.jadwal_rel.mata_pelajaran if a.jadwal_rel else 'Mata Pelajaran Umum' }}
+            </div>
+            <div class="text-slate-400">
+              {{ a.tanggal }} • Jam {{ a.jam_masuk }} • Jarak: {{ a.jarak | round(1) if a.jarak else 0 }}m
+            </div>
+          </div>
+
+          <div class="flex items-center gap-3">
+            <span class="px-3 py-1 rounded-full font-bold
+                         {{ 'bg-emerald-500/10 text-emerald-600 border border-emerald-500/20' if a.status == 'Hadir' else 'bg-amber-500/10 text-amber-600 border border-amber-500/20' }}">
+              {{ a.status }}
+            </span>
+
+            <a href="{{ url_for('dashboard.detail_absensi_view', absensi_id=a.id) }}" class="p-1.5 rounded-xl bg-white dark:bg-slate-700 text-blue-600 dark:text-blue-400 border border-slate-200 dark:border-slate-600" title="Verifikasi">
+              <i data-lucide="eye" class="w-4 h-4"></i>
+            </a>
+          </div>
+        </div>
+        {% endfor %}
+      </div>
+      {% else %}
+        <div class="text-center py-8 text-slate-400 text-xs">Belum ada riwayat absensi untuk siswa ini.</div>
+      {% endif %}
+    </div>
+
+  </div>
+
+</div>
+{% endblock %}
